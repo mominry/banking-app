@@ -2,6 +2,8 @@ package com.aurionpro.controller;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import javax.annotation.Resource;
@@ -14,10 +16,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
+import com.aurionpro.model.Account;
 import com.aurionpro.model.Transaction;
 import com.aurionpro.model.User;
 import com.aurionpro.util.BankDbUtil;
-
 
 /**
  * Servlet implementation class LoginController
@@ -25,47 +27,46 @@ import com.aurionpro.util.BankDbUtil;
 @WebServlet("/LoginController")
 public class LoginController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	
+
 	private BankDbUtil dbUtil;
-	@Resource(name="jdbc/bank-source")
+	@Resource(name = "jdbc/bank-source")
 	public DataSource dataSource;
-	
-	
-	
+
 	public void init() throws ServletException {
 		// TODO Auto-generated method stub
 		super.init();
-		dbUtil= new BankDbUtil(dataSource);
-		
+		dbUtil = new BankDbUtil(dataSource);
+
 	}
 
-	
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
-    public LoginController() {
-        super();
-        // TODO Auto-generated constructor stub
-    }
+	/**
+	 * @see HttpServlet#HttpServlet()
+	 */
+	public LoginController() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
+	 *      response)
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		// TODO Auto-generated method stub
 //		response.getWriter().append("Served at: ").append(request.getContextPath());
 //		String userType = request.getParameter("user_type");
 //		String userName = request.getParameter("username");
 //		String userPassword = request.getParameter("password");
 //		System.out.println("userType "+userType+"  userName"+userName+"   userPassword"+userPassword);
-		
+
 		String command = request.getParameter("action");
 		System.out.println(command);
-		if(command==null) {
-			command="login";
+		if (command == null) {
+			command = "login";
 		}
-		
-		switch(command) {
+
+		switch (command) {
 		case "login":
 			try {
 				directUsersAccordingToType(request, response);
@@ -74,89 +75,129 @@ public class LoginController extends HttpServlet {
 				e.printStackTrace();
 			}
 			break;
-			
-		case "admin":
-			try {
-				listUsersAll(request,response);
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		case "transactions":
-			listAllTransactions(request,response);
-		
-		}	
-		
-		
-		
-		
+
+//		case "admin":
+//			try {
+//				listUsersAll(request,response);
+//			} catch (SQLException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			
+//		case "transactions":
+//			listAllTransactions(request,response);
+
+		}
+
 	}
 
 	private void listAllTransactions(HttpServletRequest request, HttpServletResponse response) {
 		try {
-			List<Transaction>transactionList=dbUtil.getAllTransactions();
+			List<Transaction> transactionList = dbUtil.getAllTransactions();
 			request.setAttribute("transactions", transactionList);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		
+
 	}
 
+	private void listUsersAll(HttpServletRequest request, HttpServletResponse response)
+			throws SQLException, IOException {
+		List<User> listUsers = dbUtil.getAllUsers();
 
-	private void listUsersAll(HttpServletRequest request, HttpServletResponse response) throws SQLException, IOException {
-		List<User> listUsers= dbUtil.getAllUsers();
-		
 		request.setAttribute("usersList", listUsers);
-		
+
 //		response.sendRedirect(request.getContextPath()+"/LoginController");
 	}
 
-
-	private void directUsersAccordingToType(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException, SQLException {
-		User UserObj=null;
-		String userType =request.getParameter("user_type");
+	private void directUsersAccordingToType(HttpServletRequest request, HttpServletResponse response)
+			throws IOException, ServletException, SQLException {
+		
+		User UserObj = null;
+		Account accountObj=null;
+		String userType = request.getParameter("user_type");
 		String userName = request.getParameter("username");
 		String userPassword = request.getParameter("password");
-		Boolean isValid=dbUtil.verifyUser(userName,userPassword);
-		System.out.println("user name "+userName);
-		System.out.println(" is user valid :"+isValid);
-		
-		if (isValid!=null) {
-			
-			if (isValid==true) {
+		Boolean isValid = dbUtil.verifyUser(userName, userPassword);
+		System.out.println("user name " + userName);
+		System.out.println(" is user valid :" + isValid);
+
+		if (isValid != null) {
+
+			if (isValid == true) {
 				UserObj = dbUtil.getUserByUserName(userName);
 				HttpSession session = request.getSession();
 				session.setAttribute("userObj", UserObj);
 				session.setAttribute("id", UserObj.getUserId());
 				session.setAttribute("isAdmin", UserObj.getIsAdmin());
-				if (UserObj.getIsAdmin()==0) {
-					response.sendRedirect("");
+				if (UserObj.getIsAdmin() == 0) {
+					getAccountDetails(request,response,UserObj);
+					List<Transaction> particularUserTransactionList = getTransactionByAccountId(request,response,UserObj);
+					session.setAttribute("transactionList", particularUserTransactionList);
+//					Enumeration<String> attributeNames = request.getAttributeNames();
+//					while (attributeNames.hasMoreElements()) {
+//						System.out.println("attribute names  :"+attributeNames.nextElement());
+//						
+//					}
+					
+					
+					response.sendRedirect("user.jsp");
+//					RequestDispatcher rd = request.getRequestDispatcher("/user.jsp"); 
+//					rd.forward(request, response);
+					
 				} else {
-					response.sendRedirect("");
+					listAllTransactions(request,response);
+					listUsersAll(request,response);
+					List<String> testAttribute=new ArrayList<String>();
+					testAttribute.add("hello");
+					testAttribute.add("hi");
+					request.setAttribute("testAttribute", testAttribute);
+//					Enumeration<String> attributeNames = request.getAttributeNames();
+//					while (attributeNames.hasMoreElements()) {
+//						System.out.println("attribute names  :"+attributeNames.nextElement());
+//						
+//					}
+					response.sendRedirect("admin.jsp");
 				}
 				System.out.println("in set session block");
 			}
 		}
-		
-		
-		
-//		response.sendRedirect(request.getContextPath()+"/LoginController");
-		RequestDispatcher requestDispatcher = request.getRequestDispatcher("/login.jsp");
-		requestDispatcher.forward(request, response);
+
+		if (isValid == null) {
+			// response.sendRedirect(request.getContextPath()+"/LoginController");
+			RequestDispatcher requestDispatcher = request.getRequestDispatcher("/login.jsp");
+			requestDispatcher.forward(request, response);
+		}
 	}
 
+	private List<Transaction> getTransactionByAccountId(HttpServletRequest request, HttpServletResponse response, User userObj) {
+		Account accountObj=dbUtil.getAccountObject(userObj);
+		List<Transaction> particularUserTransactionList=null;
+		try {
+			particularUserTransactionList=dbUtil.getTransactionByAccountId(accountObj);
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(particularUserTransactionList);
+		request.setAttribute("userTransactionList",particularUserTransactionList );
+		return particularUserTransactionList;
+	}
+
+	private void getAccountDetails(HttpServletRequest request, HttpServletResponse response, User userObj) {
+		Account accountObj=dbUtil.getAccountObject(userObj);
+		request.setAttribute("account", accountObj);
+	}
 
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
+	 *      response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		doGet(request, response);
 	}
 
-	
 }

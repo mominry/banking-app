@@ -12,6 +12,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.aurionpro.model.Account;
 import com.aurionpro.model.Transaction;
 import com.aurionpro.model.User;
 
@@ -220,6 +221,74 @@ public class BankDbUtil {
 			conn.close();
 		}
 		return transactionList;
+	}
+
+	public Account getAccountObject(User userObj) {
+		Connection conn=null;
+		PreparedStatement stmt=null;
+		ResultSet result=null;
+		Account accountObj=null;
+		
+		try {
+			conn = getConnectionToDb();
+			//		conn=dataSource.getConnection();
+			System.out.println("in try block");
+			String sql = "select * from bankdb.account where user_id=?";
+			stmt = conn.prepareStatement(sql);
+			stmt.setInt(1, userObj.getUserId());
+			result = stmt.executeQuery();
+			
+			if (result.next()) {
+//				userId=Integer.parseInt(result.getString("user_id"));
+//				
+//				userType=result.getInt("isAdmin");
+				
+				int accountNo=result.getInt("account_no");
+				String accountType=result.getString("account_type");
+				int userId =result.getInt("user_id");
+				int balance=result.getInt("balance");
+				accountObj=new Account(accountNo, accountType, userId, balance);
+				
+				
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return accountObj;
+	}
+
+	public List<Transaction> getTransactionByAccountId(Account accountObj) throws SQLException {
+		Connection conn=null;
+		PreparedStatement stmt=null;
+		ResultSet result=null;
+		List<Transaction> particularUserTransactionList = new ArrayList<Transaction>();
+		Transaction transactionObj=null;
+		
+		conn = getConnectionToDb();
+		//		conn=dataSource.getConnection();
+		
+		String sql = "select * from bankdb.transaction where account_no=?";
+		stmt = conn.prepareStatement(sql);
+		stmt.setInt(1, accountObj.getAccountNo());
+		result = stmt.executeQuery();
+		
+		while (result.next()) {
+			int transactionId=result.getInt(1);
+			int accountId=result.getInt(2);
+			String transactionType=result.getString(3);
+			Date time = result.getDate(4);
+			transactionObj=new Transaction(transactionId, accountId, transactionType, time);
+			System.out.println(transactionObj);
+			particularUserTransactionList.add(transactionObj);
+			
+			
+			
+		}
+		
+		return particularUserTransactionList;
+		
+		
 	}
 	
 	
