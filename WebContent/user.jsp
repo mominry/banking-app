@@ -60,9 +60,10 @@ th, td {
 <body>
 
 	<div class="container">
-		<a href="TransactionOptions.jsp" class="btn">Doing more
-			transactions click here</a>
+		<a href="withdraw-deposit.jsp" class="btn">Withdraw Deposit Facility</a>
 
+		<a href="fund-transfer.jsp" class="btn">fund transfer</a>
+			
 		<table border="1">
 			<!-- Table header here -->
 			<thead>
@@ -83,7 +84,7 @@ th, td {
 						<td>${transaction.transactionId}</td>
 						<td>${transaction.accountNo}</td>
 						<td>${transaction.transactionType}</td>
-						<td>hello</td>
+						<td>${transaction.time}</td>
 
 
 					</tr>

@@ -290,6 +290,106 @@ public class BankDbUtil {
 		
 		
 	}
+
+	public void addTransaction(Transaction transaction) {
+		Connection conn=null;
+		PreparedStatement stmt=null;
+		ResultSet result=null;
+		
+		
+		int accountNo = transaction.accountNo;
+		String transactionType = transaction.transactionType;
+		
+		
+		
+		
+		conn = getConnectionToDb();
+		//		conn=dataSource.getConnection();
+		
+		
+		try {
+			String sql = "insert into bankdb.transaction (account_no,transaction_type) values(?,?)";
+			stmt.setInt(1, accountNo);
+			stmt.setString(2, transactionType);
+			stmt = conn.prepareStatement(sql);
+			stmt.executeQuery();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+	public void updateBalance(Account accountObj, int amount) {
+		Connection conn=null;
+		PreparedStatement stmt=null;
+		ResultSet result=null;
+		
+        try {
+        	conn = getConnectionToDb();
+        	stmt = conn.prepareStatement("UPDATE account SET balance = balance + ? WHERE account_no = ?");
+            stmt.setInt(1, amount);
+            stmt.setInt(2, accountObj.getAccountNo());
+			stmt.executeUpdate();
+			stmt.close();
+	        conn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+        
+	}
+
+	public void withdrawMoney(Account accountObj, int amount) {
+		Connection conn=null;
+		PreparedStatement stmt=null;
+		ResultSet result=null;
+		
+        try {
+        	conn = getConnectionToDb();
+        	stmt = conn.prepareStatement("UPDATE account SET balance = balance - ? WHERE account_no = ?");
+            stmt.setInt(1, amount);
+            stmt.setInt(2, accountObj.getAccountNo());
+			stmt.executeUpdate();
+			stmt.close();
+	        conn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void addTransaction(Account accountObj, int amount,String transactionType) {
+		Connection conn=null;
+		PreparedStatement stmt=null;
+		ResultSet result=null;
+		
+		
+//		int accountNo = accountObj.accountNo;
+		
+		
+		
+		
+		
+		conn = getConnectionToDb();
+		//		conn=dataSource.getConnection();
+		
+		
+		try {
+			String sql = "insert into bankdb.transaction (account_no,transaction_type)" + "values(?,?)";
+			stmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+			stmt.setInt(1, accountObj.getAccountNo());
+			stmt.setString(2, transactionType);
+			
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+	}
 	
 	
 }

@@ -12,6 +12,16 @@
 </head>
 <body class="bg-dark">
 <div class="container">
+<div class="row">
+     <div class="col-sm-6">
+     <form class="row g-3 align-items-center mt-2" action="LoginController" method="get">
+     <input type="hidden" name="action" value="logout">
+				<div class="col-2">
+				<button type="submit" id="logout" class="btn btn-success btn-sm">logout</button>
+				</div>
+     </form>
+     </div>
+    </div>
     <div class="row justify-content-center align-items-center" style="height: 100vh;">
         <div class="col-md-6">
             <div class="card">
@@ -19,10 +29,10 @@
                     <h3>Fund Transfer</h3>
                 </div>
                 <div class="card-body">
-                    <form action="TransactionController" method="post">
+                    <form action="TransactionController" method="get">
                         <div class="mb-3">
                             <label for="userBalance" class="form-label">User Balance</label>
-                            <input type="number" class="form-control" id="userBalance" name="userBalance" value="${userBalance}" readonly>
+                            <input type="number" class="form-control" id="userBalance" name="userBalance" value="${account.balance}" readonly>
                         </div>
                         <div class="mb-3">
                             <label for="senderUsername" class="form-label">Sender Username</label>
@@ -44,8 +54,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 
-<script>
-var userBalance = ${userBalance};
+<script> 
+var userBalance = ${account.balance};
 
 // Disable the submit button if the user balance is less than the transfer amount
 document.getElementById("submitButton").disabled = (userBalance < document.getElementById("transferAmount").value);

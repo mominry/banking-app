@@ -1,6 +1,7 @@
 package com.aurionpro.controller;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -75,7 +76,19 @@ public class LoginController extends HttpServlet {
 				e.printStackTrace();
 			}
 			break;
-
+			
+		case "deposit":
+			depositInUserAccount(request,response);
+			break;
+			
+		case "withdraw":
+			withdrawMoney(request,response);
+			break;
+			
+		case "logout":
+			cleanSessionAndLogoutUser(request,response);
+			break;
+			
 //		case "admin":
 //			try {
 //				listUsersAll(request,response);
@@ -89,6 +102,54 @@ public class LoginController extends HttpServlet {
 
 		}
 
+	}
+
+	public void cleanSessionAndLogoutUser(HttpServletRequest request, HttpServletResponse response) {
+		
+		try {
+			HttpSession session = request.getSession();
+			session.invalidate();
+			response.sendRedirect("login.jsp");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void withdrawMoney(HttpServletRequest request, HttpServletResponse response) {
+		int amount=Integer.parseInt(request.getParameter("amount"));
+		HttpSession session = request.getSession();
+		Account accountObj = (Account) session.getAttribute("account");
+		
+		if (accountObj.getBalance()>=amount) {
+			dbUtil.withdrawMoney(accountObj,amount);
+			dbUtil.addTransaction(accountObj,amount,"withdraw");
+		}
+		
+		try {
+			response.sendRedirect("login.jsp");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void depositInUserAccount(HttpServletRequest request, HttpServletResponse response) {
+		int amount=Integer.parseInt(request.getParameter("amount"));
+		HttpSession session = request.getSession();
+		Account accountObj = (Account) session.getAttribute("account");
+		Transaction transaction = new Transaction(accountObj.accountNo, "deposit");
+//		List<Transaction>transactionList=(List<Transaction>) request.getAttribute("transactionList");
+//		transactionList.add(transaction);
+//		request.setAttribute("transactionList", transactionList);
+		dbUtil.addTransaction(accountObj,amount,"deposit");
+		dbUtil.updateBalance(accountObj,amount);
+		try {
+			response.sendRedirect("login.jsp");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void listAllTransactions(HttpServletRequest request, HttpServletResponse response) {
@@ -132,9 +193,11 @@ public class LoginController extends HttpServlet {
 				session.setAttribute("id", UserObj.getUserId());
 				session.setAttribute("isAdmin", UserObj.getIsAdmin());
 				if (UserObj.getIsAdmin() == 0) {
-					getAccountDetails(request,response,UserObj);
+					accountObj=getAccountDetails(request,response,UserObj);
+					session.setAttribute("account", accountObj);
 					List<Transaction> particularUserTransactionList = getTransactionByAccountId(request,response,UserObj);
 					session.setAttribute("transactionList", particularUserTransactionList);
+					response.sendRedirect("user.jsp");
 //					Enumeration<String> attributeNames = request.getAttributeNames();
 //					while (attributeNames.hasMoreElements()) {
 //						System.out.println("attribute names  :"+attributeNames.nextElement());
@@ -142,8 +205,8 @@ public class LoginController extends HttpServlet {
 //					}
 					
 					
-					response.sendRedirect("user.jsp");
-//					RequestDispatcher rd = request.getRequestDispatcher("/user.jsp"); 
+					
+//					RequestDispatcher rd = request.getRequestDispatcher("user.jsp"); 
 //					rd.forward(request, response);
 					
 				} else {
@@ -181,15 +244,18 @@ public class LoginController extends HttpServlet {
 			e.printStackTrace();
 		}
 		System.out.println(particularUserTransactionList);
-		request.setAttribute("userTransactionList",particularUserTransactionList );
+		request.getSession().setAttribute("userTransactionList",particularUserTransactionList );
 		return particularUserTransactionList;
 	}
 
-	private void getAccountDetails(HttpServletRequest request, HttpServletResponse response, User userObj) {
+	private Account getAccountDetails(HttpServletRequest request, HttpServletResponse response, User userObj) {
 		Account accountObj=dbUtil.getAccountObject(userObj);
 		request.setAttribute("account", accountObj);
+		
+		return accountObj;
 	}
-
+	
+	
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
 	 *      response)

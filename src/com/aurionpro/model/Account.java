@@ -1,10 +1,10 @@
 package com.aurionpro.model;
 
 public class Account {
-	private int accountNo;
-	private String accountType;
-	private int userId;
-	private int balance;
+	public int accountNo;
+	public String accountType;
+	public int userId;
+	public int balance;
 	public Account(int accountNo, String accountType, int userId, int balance) {
 		super();
 		this.accountNo = accountNo;

@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
+import com.aurionpro.model.Account;
 import com.aurionpro.util.BankDbUtil;
 
 /**
@@ -27,54 +28,82 @@ public class TransactionController extends HttpServlet {
 
 	    @Override
 	    public void init() throws ServletException {
-	        // Get the DataSource object from the JNDI registry
+	        
 	        dataSource = (DataSource) getServletContext().getAttribute("jdbc/bank-source");
 	    }
 
 	    @Override
 	    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-	        int userBalance = 0;
+	    	String senderUserName=req.getParameter("senderUsername");
+	        int amount = Integer.parseInt(req.getParameter("transferAmount"));
 	        HttpSession session = req.getSession();
-	        int id = (int) session.getAttribute("id");
+//	        int id = (int) session.getAttribute("id");
+			Account accountObj = (Account) session.getAttribute("account");
+	        int userBalance	=accountObj.getBalance();
 	        BankDbUtil dbUtil = new BankDbUtil(dataSource);
 	        Connection conn=null;
+	        int senderUserId=-5;
+	        int senderAccountNo=-5;
 	        
 	        try {
 	        	
 	            conn = dbUtil.getConnectionToDb();
-	            PreparedStatement stmt = conn.prepareStatement("SELECT balance FROM account WHERE user_id = ?");
-	            stmt.setInt(1, id);
+	            PreparedStatement stmt = conn.prepareStatement("SELECT user_id FROM bankdb.user WHERE username = ?");
+//	            stmt.setInt(1, id);
+	            stmt.setString(1, senderUserName);
 	            ResultSet rs = stmt.executeQuery();
 	            if (rs.next()) {
-	                userBalance = rs.getInt(1);
+	            	senderUserId = rs.getInt(1);
 	            }
+	            stmt.close();
+	            
+	            PreparedStatement stmt2 = conn.prepareStatement("SELECT account_no FROM bankdb.account WHERE user_id = ?");
+//	            stmt.setInt(1, id);
+	            stmt2.setInt(1, senderUserId);
+	            ResultSet rs2 = stmt2.executeQuery();
+	            if (rs2.next()) {
+	            	senderAccountNo = rs2.getInt(1);
+	            	System.out.println("senderAccountNo"+senderAccountNo);
+	            }
+	            
 	            stmt.close();
 	            conn.close();
 	        } catch (SQLException e) {
 	            e.printStackTrace();
 	        }
 
-	        String senderUsername = req.getParameter("senderUsername");
-	        int transferAmount = Integer.parseInt(req.getParameter("transferAmount"));
+//	        String senderUsername = req.getParameter("senderUsername");
+//	        int transferAmount = Integer.parseInt(req.getParameter("transferAmount"));
 
-	        if (userBalance < transferAmount) {
-	            // Set the error message and forward the request to the JSP
-	            req.setAttribute("errorMessage", "Insufficient balance");
-	            req.getRequestDispatcher("/fund-transfer.jsp").forward(req, resp);
-	            return;
+	        if (userBalance < amount) {
+	            
+	            
+	            LoginController loginControllerObj = new LoginController();
+	            loginControllerObj.cleanSessionAndLogoutUser(req, resp);
 	        }
 
 	        try {
+	        	conn = dbUtil.getConnectionToDb();
 //	            Connection conn = dataSource.getConnection();
 	            PreparedStatement stmt = conn.prepareStatement("UPDATE account SET balance = balance - ? WHERE account_no = ?");
-	            stmt.setInt(1, transferAmount);
-	            stmt.setInt(2, Integer.parseInt(req.getParameter("userBalance")));
+	            stmt.setInt(1, amount);
+	            stmt.setInt(2, accountObj.getAccountNo());
 	            stmt.executeUpdate();
-
-	            stmt = conn.prepareStatement("UPDATE account SET balance = balance + ? WHERE username = ?");
-	            stmt.setInt(1, transferAmount);
-	            stmt.setString(2, senderUsername);
+	            
+	            stmt = conn.prepareStatement("insert into transaction(account_no,transaction_type)"+"values(?,?)");
+	            stmt.setInt(1, accountObj.getAccountNo());
+	            stmt.setString(2, "Fund Transfer Sent");
+	            stmt.executeUpdate();
+	            
+	            stmt = conn.prepareStatement("insert into transaction(account_no,transaction_type)"+"values(?,?)");
+	            stmt.setInt(1, senderAccountNo);
+	            stmt.setString(2, "Fund Transfer Recieved");
+	            stmt.executeUpdate();
+	            
+	            stmt = conn.prepareStatement("UPDATE account SET balance = balance + ? WHERE user_id = ?");
+	            stmt.setInt(1, amount);
+	            stmt.setInt(2, senderAccountNo);
 	            stmt.executeUpdate();
 
 	            stmt.close();
@@ -83,8 +112,9 @@ public class TransactionController extends HttpServlet {
 	            e.printStackTrace();
 	        }
 
-//	        req.setAttribute("successMessage", "Fund transfer successful");
-//	        req.getRequestDispatcher("/fund-transfer.jsp").forward(req, resp);
+
+	        
+	        resp.sendRedirect("user.jsp");
 	    }
 	}
 
