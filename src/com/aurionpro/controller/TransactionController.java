@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,6 +16,8 @@ import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
 import com.aurionpro.model.Account;
+import com.aurionpro.model.Transaction;
+import com.aurionpro.model.User;
 import com.aurionpro.util.BankDbUtil;
 
 /**
@@ -25,11 +28,12 @@ public class TransactionController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
 	 private DataSource dataSource;
-
+	 private BankDbUtil dbUtil;
 	    @Override
 	    public void init() throws ServletException {
 	        
 	        dataSource = (DataSource) getServletContext().getAttribute("jdbc/bank-source");
+	        dbUtil = new BankDbUtil(dataSource);
 	    }
 
 	    @Override
@@ -91,15 +95,25 @@ public class TransactionController extends HttpServlet {
 	            stmt.setInt(2, accountObj.getAccountNo());
 	            stmt.executeUpdate();
 	            
-	            stmt = conn.prepareStatement("insert into transaction(account_no,transaction_type)"+"values(?,?)");
+//	            stmt = conn.prepareStatement("insert into transaction(account_no,transaction_type)"+"values(?,?)");
+//	            stmt.setInt(1, accountObj.getAccountNo());
+//	            stmt.setString(2, "Fund Transfer Sent");
+//	            stmt.executeUpdate();
+//	            
+//	            stmt = conn.prepareStatement("insert into transaction(account_no,transaction_type)"+"values(?,?)");
+//	            stmt.setInt(1, senderAccountNo);
+//	            stmt.setString(2, "Fund Transfer Recieved");
+//	            stmt.executeUpdate();
+	            
+	            stmt = conn.prepareStatement("insert into transaction(account_no,transaction_type,recieved_account_no,amount)"+"values(?,?,?,?)");
 	            stmt.setInt(1, accountObj.getAccountNo());
 	            stmt.setString(2, "Fund Transfer Sent");
+	            stmt.setInt(3, senderAccountNo);
+	            stmt.setInt(4, amount);
+	            
 	            stmt.executeUpdate();
 	            
-	            stmt = conn.prepareStatement("insert into transaction(account_no,transaction_type)"+"values(?,?)");
-	            stmt.setInt(1, senderAccountNo);
-	            stmt.setString(2, "Fund Transfer Recieved");
-	            stmt.executeUpdate();
+	            
 	            
 	            stmt = conn.prepareStatement("UPDATE account SET balance = balance + ? WHERE user_id = ?");
 	            stmt.setInt(1, amount);
@@ -112,9 +126,38 @@ public class TransactionController extends HttpServlet {
 	            e.printStackTrace();
 	        }
 
-
-	        
-	        resp.sendRedirect("user.jsp");
+//	        LoginController loginController = new LoginController();
+	        updateTransactions(req,resp);
+//	        resp.sendRedirect("user.jsp");
 	    }
+	    
+	    public void updateTransactions(HttpServletRequest request, HttpServletResponse response) {
+			HttpSession session = request.getSession();
+			User userObj=(User) session.getAttribute("userObj");
+			List<Transaction> particularUserTransactionList = getTransactionByAccountId(request,response,userObj);
+			session.setAttribute("transactionList", particularUserTransactionList);
+			try {
+				response.sendRedirect("user.jsp");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	    
+	    public List<Transaction> getTransactionByAccountId(HttpServletRequest request, HttpServletResponse response, User userObj) {
+			
+	    	
+	    	Account accountObj=dbUtil.getAccountObject(userObj);
+			List<Transaction> particularUserTransactionList=null;
+			try {
+				particularUserTransactionList=dbUtil.getTransactionByAccountId(accountObj);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println(particularUserTransactionList);
+			request.getSession().setAttribute("userTransactionList",particularUserTransactionList );
+			return particularUserTransactionList;
+		}
 	}
 

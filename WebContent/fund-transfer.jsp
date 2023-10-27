@@ -20,6 +20,12 @@
 				<button type="submit" id="logout" class="btn btn-success btn-sm">logout</button>
 				</div>
      </form>
+      <form class="row g-3 align-items-center mt-2" action="LoginController" method="get">
+     <input type="hidden" name="action" value="redirect">
+				<div class="col-2">
+				<button type="submit" id="redirect" class="btn btn-success btn-sm">Back</button>
+				</div>
+     </form>
      </div>
     </div>
     <div class="row justify-content-center align-items-center" style="height: 100vh;">

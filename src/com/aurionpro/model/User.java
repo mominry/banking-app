@@ -26,6 +26,16 @@ public class User {
 	}
 	
 	
+	
+	
+	public User(int userId, String firstName, String lastName, String userName, String password) {
+		super();
+		this.userId = userId;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.userName = userName;
+		this.password = password;
+	}
 	public User(int userId, String firstName, String lastName, String userName, int isAdmin) {
 		super();
 		this.userId = userId;

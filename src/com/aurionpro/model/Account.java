@@ -12,6 +12,16 @@ public class Account {
 		this.userId = userId;
 		this.balance = balance;
 	}
+	
+	
+	public Account(String accountType, int userId, int balance) {
+		super();
+		this.accountType = accountType;
+		this.userId = userId;
+		this.balance = balance;
+	}
+
+
 	public int getAccountNo() {
 		return accountNo;
 	}
